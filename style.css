@@ -1,0 +1,38 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent body scrollbars */
+  box-sizing: border-box;
+}
+
+body {
+  display: flex; /* Use flexbox to manage layout */
+  /* Add padding around the app container */
+  padding: 5vh 5vw;
+  /* Background is now transparent, showing through html or default */
+  box-sizing: border-box;
+}
+
+#app {
+  flex-grow: 1; /* Allow app div to grow */
+  display: flex; /* Use flexbox for inner content */
+  height: 100%; /* Fill the padded body space */
+  width: 100%; /* Fill the padded body space */
+  background-color: #151718; /* Match seti theme background */
+  /* Add a drop shadow */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+  border-radius: 4px; /* Optional: slightly rounded corners */
+  overflow: hidden; /* Ensure CodeMirror stays within the bounds */
+  box-sizing: border-box;
+}
+
+/* Make CodeMirror fill its container */
+.CodeMirror {
+  font-family: 'Fira Code', 'Source Code Pro', monospace; /* Optional: Use a nice coding font */
+  font-size: 18px; /* Larger font size for display */
+  line-height: 1.4;
+  height: 100%; /* Fill the #app container */
+  flex-grow: 1; /* Allow CodeMirror to fill the #app container */
+  /* Remove !important, should not be needed */
+}

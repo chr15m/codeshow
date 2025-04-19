@@ -1,0 +1,33 @@
+(ns main
+  (:require
+    [reagent.core :as r]
+    [reagent.dom :as rdom]))
+
+(def initial-code
+  "(ns example.core\n\n(defn greet\n  \"Takes a name and returns a greeting.\"\n  [name]\n  (str \"Hello, \" name \"!\"))\n\n(println (greet \"World\"))\n\n;; Sample data structure\n(def data\n  {:users [{:id 1 :name \"Alice\"}\n           {:id 2 :name \"Bob\"}]\n   :config {:timeout 5000\n            :retries 3}})\n\n(comment\n  (+ 1 2 3)\n  (map inc [1 2 3]))\n")
+
+(defn codemirror-editor []
+  (let [editor-instance (r/atom nil)] ; To hold the CodeMirror instance if needed later
+    [:div {:style {:height "100%" :width "100%"} ; Container div
+           :ref (fn [el]
+                  (when el ; el is the DOM node
+                    (let [cm-options #js {:value initial-code
+                                          :mode "clojure"
+                                          :theme "seti" ; Changed theme to seti
+                                          :lineNumbers true
+                                          :matchBrackets true
+                                          :autoCloseBrackets true
+                                          :lineWrapping true ; Wrap long lines
+                                          }]
+                      ;; Check if CodeMirror is already initialized
+                      (when-not @editor-instance
+                        (let [cm (js/CodeMirror el cm-options)]
+                          ;; Optionally refresh to ensure proper layout
+                          (.refresh cm)
+                          (reset! editor-instance cm))))))}]))
+
+
+(defn app []
+  [codemirror-editor])
+
+(rdom/render [app] (.getElementById js/document "app"))
