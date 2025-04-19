@@ -70,10 +70,15 @@
                    (swap! cm-instances assoc :config cm))))))}])
 
 (defn codemirror-editor [state]
-  (let [ui (:ui @state)]
+  (let [ui (:ui @state)
+        has-filename (not (empty? (:filename ui)))
+        top-padding (if (or (:dots ui) has-filename) "2em" "1em")
+        filename-display (if (empty? (:filename ui)) "none" "block")]
     [:div
      {:class (when (:dots ui) "threedots")
-      :style {"--filename" (str "\"" (:filename ui) "\"")}}
+      :style {"--filename" (str "\"" (:filename ui) "\"")
+              "--top-padding" top-padding
+              "--filename-display" filename-display}}
      [:div.editor-container
       {:ref (fn [el]
               (when el ; el is the DOM node
