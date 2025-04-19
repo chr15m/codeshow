@@ -33,6 +33,10 @@ body {
   box-sizing: border-box;
 }
 
+.config-editor.hidden {
+  display: none;
+}
+
 .config-editor {
   transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
   max-height: 200px;

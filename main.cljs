@@ -3,18 +3,19 @@
     [reagent.core :as r]
     [reagent.dom :as rdom]))
 
-(def initial-code
-  "(ns example)\n\n(print (+ 2 3))")
+(defonce state
+  (r/atom
+    {:code "(ns example)\n\n(print (+ 2 3))"
+     :config "{:dots true\n :filename \"example.cljs\"\n :language \"clojure\"}"
+     :show-config false}))
 
-(def initial-config
-  "{:dots true\n :filename \"example.cljs\"\n :language \"clojure\"}")
-
-(defn config-editor []
+(defn config-editor [state]
   (let [editor-instance (r/atom nil)]
     [:div.config-editor
-     {:ref (fn [el]
+     {:class (when (not (:show-config @state)) "hidden")
+      :ref (fn [el]
              (when el ; el is the DOM node
-               (let [cm-options #js {:value initial-config
+               (let [cm-options #js {:value (:config @state)
                                      :mode "clojure"
                                      :theme "seti"
                                      :lineNumbers false
@@ -27,12 +28,12 @@
                      (.refresh cm)
                      (reset! editor-instance cm))))))}]))
 
-(defn codemirror-editor []
+(defn codemirror-editor [state]
   (let [editor-instance (r/atom nil)]
     [:div.threedots
      {:ref (fn [el]
              (when el ; el is the DOM node
-               (let [cm-options #js {:value initial-code
+               (let [cm-options #js {:value (:code @state)
                                      :mode "clojure"
                                      :theme "seti"
                                      :lineNumbers false
@@ -47,15 +48,11 @@
                      (.refresh cm)
                      (reset! editor-instance cm))))))}]))
 
+(defn app [state]
+  [:div.app-container
+   {:on-mouse-enter #(swap! state assoc :show-config true)
+    :on-mouse-leave #(swap! state assoc :show-config false)}
+   [config-editor state]
+   [codemirror-editor state]])
 
-(defn app []
-  (let [show-config (r/atom false)]
-    (fn []
-      [:div.app-container
-       {:on-mouse-enter #(reset! show-config true)
-        :on-mouse-leave #(reset! show-config false)}
-       (when @show-config
-         [config-editor])
-       [codemirror-editor]])))
-
-(rdom/render [app] (.getElementById js/document "app"))
+(rdom/render [app state] (.getElementById js/document "app"))
