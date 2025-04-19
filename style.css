@@ -55,3 +55,14 @@ body {
     40px 0 0 #ffbd2e,
     80px 0 0 #27c93f;
 }
+
+/* Filename display */
+.threedots .CodeMirror::after {
+  content: 'example.cljs';
+  position: absolute;
+  top: 1em;
+  left: 180px;
+  font-size: 24px;
+  color: #fff;
+  font-family: 'Fira Code', 'Source Code Pro', monospace;
+}

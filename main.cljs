@@ -8,7 +8,7 @@
 
 (defn codemirror-editor []
   (let [editor-instance (r/atom nil)]
-    [:div ;.threedots
+    [:div.threedots
      {:ref (fn [el]
              (when el ; el is the DOM node
                (let [cm-options #js {:value initial-code
