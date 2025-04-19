@@ -2,12 +2,16 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Prevent body scrollbars */
+  /* overflow: hidden; /* Allow scrolling if content is larger than viewport */
   box-sizing: border-box;
 }
 
 body {
   display: flex; /* Use flexbox to manage layout */
+  /* Center the #app container */
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* Ensure body takes full height for centering */
   /* Add padding around the app container */
   padding: 5vh 5vw;
   /* Background is now transparent, showing through html or default */
@@ -15,10 +19,12 @@ body {
 }
 
 #app {
-  flex-grow: 1; /* Allow app div to grow */
+  /* flex-grow: 1; /* Remove: Allow shrinking */
   display: flex; /* Use flexbox for inner content */
-  height: 100%; /* Fill the padded body space */
-  width: 100%; /* Fill the padded body space */
+  /* height: 100%; /* Remove: Allow shrinking */
+  /* width: 100%; /* Remove: Allow shrinking */
+  width: auto; /* Size horizontally based on content/codemirror */
+  max-width: 90vw; /* Prevent excessive width */
   background-color: #151718; /* Match seti theme background */
   /* Add a drop shadow */
   box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
@@ -27,12 +33,12 @@ body {
   box-sizing: border-box;
 }
 
-/* Make CodeMirror fill its container */
+/* Make CodeMirror fill its container and size to content */
 .CodeMirror {
   font-family: 'Fira Code', 'Source Code Pro', monospace; /* Optional: Use a nice coding font */
   font-size: 18px; /* Larger font size for display */
   line-height: 1.4;
-  height: 100%; /* Fill the #app container */
-  flex-grow: 1; /* Allow CodeMirror to fill the #app container */
-  /* Remove !important, should not be needed */
+  height: auto !important; /* Allow vertical sizing based on content */
+  width: 100%; /* Fill the auto-sized #app container */
+  /* flex-grow: 1; /* Remove: Not needed */
 }

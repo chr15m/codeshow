@@ -8,16 +8,17 @@
 
 (defn codemirror-editor []
   (let [editor-instance (r/atom nil)] ; To hold the CodeMirror instance if needed later
-    [:div {:style {:height "100%" :width "100%"} ; Container div
+    [:div {;; Remove explicit height/width style
            :ref (fn [el]
                   (when el ; el is the DOM node
                     (let [cm-options #js {:value initial-code
                                           :mode "clojure"
-                                          :theme "seti" ; Changed theme to seti
+                                          :theme "seti"
                                           :lineNumbers true
                                           :matchBrackets true
                                           :autoCloseBrackets true
                                           :lineWrapping true ; Wrap long lines
+                                          :viewportMargin js/Infinity ; Render all lines for auto height
                                           }]
                       ;; Check if CodeMirror is already initialized
                       (when-not @editor-instance
