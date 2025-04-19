@@ -19,11 +19,33 @@ body {
   display: flex;
   width: auto;
   max-width: 90vw;
+  box-sizing: border-box;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   background-color: #151718;
   box-shadow: 0 0px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
   border-radius: 4px;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.config-editor {
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  max-height: 200px;
+  opacity: 1;
+  border-bottom: 1px solid #333;
+}
+
+.config-editor .CodeMirror {
+  font-size: 16px;
+  height: 100px !important;
+  min-height: 100px;
+  max-height: 100px;
+  padding: 0.5em;
 }
 
 .CodeMirror {

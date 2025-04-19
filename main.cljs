@@ -6,6 +6,27 @@
 (def initial-code
   "(ns example)\n\n(print (+ 2 3))")
 
+(def initial-config
+  "{:dots true\n :filename \"example.cljs\"\n :language \"clojure\"}")
+
+(defn config-editor []
+  (let [editor-instance (r/atom nil)]
+    [:div.config-editor
+     {:ref (fn [el]
+             (when el ; el is the DOM node
+               (let [cm-options #js {:value initial-config
+                                     :mode "clojure"
+                                     :theme "seti"
+                                     :lineNumbers false
+                                     :matchBrackets true
+                                     :autoCloseBrackets true
+                                     :lineWrapping true
+                                     :viewportMargin js/Infinity}]
+                 (when-not @editor-instance
+                   (let [cm (js/CodeMirror el cm-options)]
+                     (.refresh cm)
+                     (reset! editor-instance cm))))))}]))
+
 (defn codemirror-editor []
   (let [editor-instance (r/atom nil)]
     [:div.threedots
@@ -28,6 +49,13 @@
 
 
 (defn app []
-  [codemirror-editor])
+  (let [show-config (r/atom false)]
+    (fn []
+      [:div.app-container
+       {:on-mouse-enter #(reset! show-config true)
+        :on-mouse-leave #(reset! show-config false)}
+       (when @show-config
+         [config-editor])
+       [codemirror-editor]])))
 
 (rdom/render [app] (.getElementById js/document "app"))
