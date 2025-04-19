@@ -4,6 +4,10 @@
     [reagent.dom :as rdom]
     [clojure.core :refer [read-string]]))
 
+;; Timer for auto-hiding config
+(defonce config-timer (atom nil))
+(def config-hide-delay 2000) ;; 2 seconds
+
 (defn load-state-from-storage []
   (try
     (when-let [saved-state (.getItem js/localStorage "code-editor-state")]
@@ -19,6 +23,7 @@
         {:code "(ns example)\n\n(print (+ 2 3))"
          :config "{:dots true\n :filename \"example.cljs\"\n :language \"clojure\"}"
          :show-config false
+         :last-activity 0
          :ui {:dots true
               :filename "example.cljs"
               :language "clojure"}})))
@@ -116,11 +121,34 @@
 ;; Call setup after render
 (rdom/render [app state] (.getElementById js/document "app"))
 
+;; Function to reset the auto-hide timer
+(defn reset-config-timer []
+  (when @config-timer
+    (js/clearTimeout @config-timer))
+  
+  (swap! state assoc 
+         :last-activity (.getTime (js/Date.))
+         :show-config true)
+  
+  (reset! config-timer 
+          (js/setTimeout 
+            #(when (> (.getTime (js/Date.)) (+ (:last-activity @state) config-hide-delay))
+               (swap! state assoc :show-config false))
+            config-hide-delay)))
+
 ;; Set up event handlers for showing/hiding config
 (defonce event-handlers
   (let [body (.-body js/document)]
-    (.addEventListener body "mouseenter" 
-                       #(swap! state assoc :show-config true))
+    ;; Mouse movement handler
+    (.addEventListener js/document "mousemove" (fn [_] (reset-config-timer)))
+    
+    ;; Keyboard activity handler
+    (.addEventListener js/document "keydown" (fn [_] (reset-config-timer)))
+    
+    ;; Mouse enter still shows config immediately
+    (.addEventListener body "mouseenter" (fn [_] (reset-config-timer)))
+    
+    ;; Mouse leave still hides config immediately
     (.addEventListener body "mouseleave" 
                        #(swap! state assoc :show-config false))))
 
