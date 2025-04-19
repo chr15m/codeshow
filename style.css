@@ -84,7 +84,7 @@ body {
 
 /* Filename display */
 .threedots .CodeMirror::after {
-  content: 'example.cljs';
+  content: var(--filename);
   position: absolute;
   top: 1em;
   left: 180px;
