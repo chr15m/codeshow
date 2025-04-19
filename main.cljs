@@ -4,17 +4,16 @@
     [reagent.dom :as rdom]))
 
 (def initial-code
-  "(ns example.core\n\n(defn greet\n  \"Takes a name and returns a greeting.\"\n  [name]\n  (str \"Hello, \" name \"!\"))\n\n(println (greet \"World\"))\n\n;; Sample data structure\n(def data\n  {:users [{:id 1 :name \"Alice\"}\n           {:id 2 :name \"Bob\"}]\n   :config {:timeout 5000\n            :retries 3}})\n\n(comment\n  (+ 1 2 3)\n  (map inc [1 2 3]))\n")
+  "(ns example)\n\n(print (+ 2 3))")
 
 (defn codemirror-editor []
   (let [editor-instance (r/atom nil)] ; To hold the CodeMirror instance if needed later
-    [:div {;; Remove explicit height/width style
-           :ref (fn [el]
+    [:div {:ref (fn [el]
                   (when el ; el is the DOM node
                     (let [cm-options #js {:value initial-code
                                           :mode "clojure"
                                           :theme "seti"
-                                          :lineNumbers true
+                                          :lineNumbers false
                                           :matchBrackets true
                                           :autoCloseBrackets true
                                           :lineWrapping true ; Wrap long lines
