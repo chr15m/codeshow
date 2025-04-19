@@ -34,4 +34,24 @@ body {
   width: 100%;
   min-width: 50vw;
   padding: 1em;
+  position: relative;
+}
+
+.threedots .CodeMirror {
+  padding: 2em 1em 1em;
+}
+
+/* Traffic light dots */
+.threedots .CodeMirror::before {
+  content: '';
+  position: absolute;
+  top: 0.75em;
+  left: 1em;
+  width: 24px;
+  height: 24px;
+  background-color: #ff5f56;
+  border-radius: 50%;
+  box-shadow: 
+    40px 0 0 #ffbd2e,
+    80px 0 0 #27c93f;
 }
