@@ -78,12 +78,18 @@
 
 (defn app [state]
   [:div.app-container
-   {:on-mouse-enter #(swap! state assoc :show-config true)
-    :on-mouse-leave #(swap! state assoc :show-config false)}
    [config-editor state]
    [codemirror-editor state]])
 
 ;; Initialize UI from config on startup
 (update-ui-from-config (:config @state))
 
+;; Call setup after render
 (rdom/render [app state] (.getElementById js/document "app"))
+
+(defonce event-handlers
+  (let [body (.-body js/document)]
+    (.addEventListener body "mouseenter" 
+                       #(swap! state assoc :show-config true))
+    (.addEventListener body "mouseleave" 
+                       #(swap! state assoc :show-config false))))
