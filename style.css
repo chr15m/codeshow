@@ -74,6 +74,11 @@ body {
   padding: 2em 1em 1em;
 }
 
+/* Add padding for filename when dots are off */
+.CodeMirror {
+  padding: 2em 1em 1em;
+}
+
 /* Traffic light dots */
 .threedots .CodeMirror::before {
   content: '';
@@ -95,6 +100,17 @@ body {
   position: absolute;
   top: 1em;
   left: 180px;
+  font-size: 24px;
+  color: #fff;
+  font-family: 'Fira Code', 'Source Code Pro', monospace;
+}
+
+/* Filename display when dots are off */
+.CodeMirror::after {
+  content: var(--filename);
+  position: absolute;
+  top: 0.5em;
+  left: 1em;
   font-size: 24px;
   color: #fff;
   font-family: 'Fira Code', 'Source Code Pro', monospace;
