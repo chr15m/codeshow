@@ -4,29 +4,20 @@
     [reagent.dom :as rdom]
     [clojure.core :refer [read-string]]))
 
-;; Timer for auto-hiding config
-(defonce config-timer (atom nil))
-(def config-hide-delay 2000) ;; 2 seconds
+(defn edn-to-str [e]
+  (-> e pr-str (.replaceAll " :" "\n :") (.replaceAll ",\n" "\n")))
 
-(defn load-state-from-storage []
-  (try
-    (when-let [saved-state (.getItem js/localStorage "code-editor-state")]
-      (let [parsed (read-string saved-state)]
-        (assoc parsed :show-config false)))
-    (catch js/Error e
-      (js/console.error "Failed to load state from localStorage:" e)
-      nil)))
+(def initial-config
+  {:dots true
+   :filename "example.cljs"
+   :language "clojure"})
 
 (defonce state
   (r/atom
-    (or (load-state-from-storage)
-        {:code "(ns example)\n\n(print (+ 2 3))"
-         :config "{:dots true\n :filename \"example.cljs\"\n :language \"clojure\"}"
-         :show-config false
-         :last-activity 0
-         :ui {:dots true
-              :filename "example.cljs"
-              :language "clojure"}})))
+    {:code "(ns example)\n\n(print (+ 2 3))"
+     :config (edn-to-str initial-config)
+     :show-config false ;; Start hidden
+     :ui initial-config}))
 
 (defonce cm-instances
   (atom {:code nil
@@ -64,7 +55,11 @@
                                    :autoCloseBrackets true
                                    :lineWrapping true
                                    :viewportMargin js/Infinity}]
-               (when-not (:config @cm-instances)
+               (if-let [cm (:config @cm-instances)]
+                 ;; If instance exists, just ensure value is up-to-date
+                 (when (not= (.getValue cm) (:config @state))
+                   (.setValue cm (:config @state)))
+                 ;; Else, create the instance
                  (let [cm (js/CodeMirror el cm-options)]
                    (.on cm "change" (fn [_ _]
                                       (let [new-value (.getValue cm)]
@@ -85,8 +80,10 @@
               "--top-padding" top-padding
               "--filename-display" filename-display}}
      [:div.editor-container
-      {:ref (fn [el]
-              (when el ; el is the DOM node
+      {:on-mouse-enter #(swap! state assoc :show-config false)
+       :on-mouse-leave #(swap! state assoc :show-config true)
+       :ref (fn [el]
+              (when el
                 (let [cm-options #js {:value (:code @state)
                                       :mode (:language ui)
                                       :theme "seti"
@@ -98,8 +95,12 @@
                                       :viewportMargin js/Infinity}]
                   (if-let [cm (:code @cm-instances)]
                     (do
-                      (.setOption cm "mode" (:language ui))
+                      ;; Update mode if it changed
+                      (when (not= (.getOption cm "mode") (:language ui))
+                        (.setOption cm "mode" (:language ui)))
+                      ;; Refresh needed if mode changes or other updates occur
                       (.refresh cm))
+                    ;; Else, create the instance
                     (let [cm (js/CodeMirror el cm-options)]
                       ;; Set up change handler to save state
                       (.on cm "change" (fn [_ _]
@@ -115,42 +116,23 @@
    [config-editor state]
    [codemirror-editor state]])
 
-;; Initialize UI from config on startup
-(update-ui-from-config (:config @state))
-
-;; Call setup after render
 (rdom/render [app state] (.getElementById js/document "app"))
 
-;; Function to reset the auto-hide timer
-(defn reset-config-timer []
-  (when @config-timer
-    (js/clearTimeout @config-timer))
-  
-  (swap! state assoc 
-         :last-activity (.getTime (js/Date.))
-         :show-config true)
-  
-  (reset! config-timer 
-          (js/setTimeout 
-            #(when (> (.getTime (js/Date.)) (+ (:last-activity @state) config-hide-delay))
-               (swap! state assoc :show-config false))
-            config-hide-delay)))
+(try
+  (when-let [saved-state (.getItem js/localStorage "code-editor-state")]
+    (print (read-string saved-state))
+    (swap! state merge (read-string saved-state))
+    (some-> (:code @cm-instances) .getDoc (.setValue (:code @state))))
+  (catch :default _e nil))
 
-;; Set up event handlers for showing/hiding config
+(update-ui-from-config (:config @state))
+
 (defonce event-handlers
   (let [body (.-body js/document)]
-    ;; Mouse movement handler
-    (.addEventListener js/document "mousemove" (fn [_] (reset-config-timer)))
-    
-    ;; Keyboard activity handler
-    (.addEventListener js/document "keydown" (fn [_] (reset-config-timer)))
-    
-    ;; Mouse enter still shows config immediately
-    (.addEventListener body "mouseenter" (fn [_] (reset-config-timer)))
-    
-    ;; Mouse leave still hides config immediately
-    (.addEventListener body "mouseleave" 
-                       #(swap! state assoc :show-config false))))
-
-;; Save initial state to localStorage
-(save-state-to-storage @state)
+    (.addEventListener body "mouseenter"
+                       #(swap! state assoc :show-config true))
+    (.addEventListener body "mouseleave"
+                       #(swap! state assoc :show-config false))
+    (.addEventListener body "click"
+                       #(when (identical? (.-target %) body)
+                          (swap! state update :show-config not)))))
