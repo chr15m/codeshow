@@ -6,10 +6,13 @@
 
 ;*** data ***;
 
+(def cdn-root "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15")
+
 (def initial-config
   {:dots true
    :filename "example.cljs"
-   :language "clojure"})
+   :language "clojure"
+   :theme "seti"})
 
 (defonce state
   (r/atom
@@ -39,6 +42,14 @@
   (when-let [config (try (read-string config-str)
                          (catch :default _e nil))]
     (swap! state update :ui merge config)))
+
+(defn debounce [f delay]
+  (let [timeout-id (atom nil)]
+    (fn [& args]
+      (when @timeout-id
+        (js/clearTimeout @timeout-id))
+      (reset! timeout-id
+              (js/setTimeout #(apply f args) delay)))))
 
 ;*** components ***;
 
@@ -84,7 +95,7 @@
               (when el
                 (let [cm-options #js {:value (:code @state)
                                       :mode (:language ui)
-                                      :theme "seti"
+                                      :theme (:theme ui)
                                       :lineNumbers false
                                       :matchBrackets true
                                       :autoCloseBrackets true
@@ -120,6 +131,26 @@
   (catch :default _e nil))
 
 (update-ui-from-config (:config @state))
+
+(defn update-theme-and-language! [*state]
+  (let [{:keys [language theme]} (:ui *state)
+        style-el (js/document.getElementById "theme")
+        lang-el (js/document.getElementById "language")]
+    (aset style-el "href" (str cdn-root "/theme/" theme ".min.css"))
+    (let [new-lang-el (.createElement js/document "script")
+          parent-node (.-parentNode lang-el)
+          new-src (str cdn-root "/mode/" language "/" language ".min.js")]
+      (aset new-lang-el "id" "language")
+      (aset new-lang-el "src" new-src)
+      (.replaceChild parent-node new-lang-el lang-el))))
+
+(def debounced-update-theme-and-language!
+  (debounce update-theme-and-language! 250))
+
+(add-watch state :ui-watcher
+  (fn [_ _ old-state new-state]
+    (when (not= (:ui old-state) (:ui new-state))
+      (debounced-update-theme-and-language! new-state))))
 
 (defonce event-handlers
   (let [body (.-body js/document)]
