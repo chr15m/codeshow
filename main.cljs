@@ -76,7 +76,7 @@
 
 (defn codemirror-editor [state]
   (let [ui (:ui @state)
-        has-filename (not (empty? (:filename ui)))
+        has-filename (seq (:filename ui))
         top-padding (if (or (:dots ui) has-filename) "2em" "1em")
         filename-display (if (empty? (:filename ui)) "none" "block")]
     [:div
