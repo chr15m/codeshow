@@ -4,8 +4,7 @@
     [reagent.dom :as rdom]
     [clojure.core :refer [read-string]]))
 
-(defn edn-to-str [e]
-  (-> e pr-str (.replaceAll " :" "\n :") (.replaceAll ",\n" "\n")))
+;*** data ***;
 
 (def initial-config
   {:dots true
@@ -15,7 +14,10 @@
 (defonce state
   (r/atom
     {:code "(ns example)\n\n(print (+ 2 3))"
-     :config (edn-to-str initial-config)
+     :config (-> initial-config
+                 pr-str
+                 (.replaceAll " :" "\n :")
+                 (.replaceAll ",\n" "\n"))
      :show-config false ;; Start hidden
      :ui initial-config}))
 
@@ -23,12 +25,7 @@
   (atom {:code nil
          :config nil}))
 
-(defn parse-config [config-str]
-  (try
-    (read-string config-str)
-    (catch js/Error e
-      (js/console.error "Failed to parse config:" e)
-      nil)))
+;*** functions ***;
 
 (defn save-state-to-storage [state-val]
   (try
@@ -39,14 +36,17 @@
       (js/console.error "Failed to save state to localStorage:" e))))
 
 (defn update-ui-from-config [config-str]
-  (when-let [config (parse-config config-str)]
+  (when-let [config (try (read-string config-str)
+                         (catch :default _e nil))]
     (swap! state update :ui merge config)))
+
+;*** components ***;
 
 (defn config-editor [state]
   [:div.config-editor
    {:class (when (not (:show-config @state)) "hidden")
     :ref (fn [el]
-           (when el ; el is the DOM node
+           (when el
              (let [cm-options #js {:value (:config @state)
                                    :mode "clojure"
                                    :theme "seti"
@@ -56,10 +56,8 @@
                                    :lineWrapping true
                                    :viewportMargin js/Infinity}]
                (if-let [cm (:config @cm-instances)]
-                 ;; If instance exists, just ensure value is up-to-date
                  (when (not= (.getValue cm) (:config @state))
                    (.setValue cm (:config @state)))
-                 ;; Else, create the instance
                  (let [cm (js/CodeMirror el cm-options)]
                    (.on cm "change" (fn [_ _]
                                       (let [new-value (.getValue cm)]
@@ -95,19 +93,14 @@
                                       :viewportMargin js/Infinity}]
                   (if-let [cm (:code @cm-instances)]
                     (do
-                      ;; Update mode if it changed
                       (when (not= (.getOption cm "mode") (:language ui))
                         (.setOption cm "mode" (:language ui)))
-                      ;; Refresh needed if mode changes or other updates occur
                       (.refresh cm))
-                    ;; Else, create the instance
                     (let [cm (js/CodeMirror el cm-options)]
-                      ;; Set up change handler to save state
                       (.on cm "change" (fn [_ _]
                                          (let [new-value (.getValue cm)]
                                            (swap! state assoc :code new-value)
                                            (save-state-to-storage @state))))
-                      ;; Optionally refresh to ensure proper layout
                       (.refresh cm)
                       (swap! cm-instances assoc :code cm))))))}]]))
 
@@ -116,11 +109,12 @@
    [config-editor state]
    [codemirror-editor state]])
 
+;*** launch ***;
+
 (rdom/render [app state] (.getElementById js/document "app"))
 
 (try
   (when-let [saved-state (.getItem js/localStorage "code-editor-state")]
-    (print (read-string saved-state))
     (swap! state merge (read-string saved-state))
     (some-> (:code @cm-instances) .getDoc (.setValue (:code @state))))
   (catch :default _e nil))
