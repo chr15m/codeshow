@@ -43,6 +43,11 @@
                          (catch :default _e nil))]
     (swap! state update :ui merge config)))
 
+(defn update-cm-options [cm ui]
+  (.setOption cm "theme" (:theme ui))
+  (.setOption cm "mode" (:mode ui))
+  (.refresh cm))
+
 (defn debounce [f delay]
   (let [timeout-id (atom nil)]
     (fn [& args]
@@ -60,7 +65,6 @@
            (when el
              (let [cm-options #js {:value (:config @state)
                                    :mode "clojure"
-                                   :theme "seti"
                                    :lineNumbers false
                                    :matchBrackets true
                                    :autoCloseBrackets true
@@ -103,10 +107,7 @@
                                       ; Render all lines for auto height
                                       :viewportMargin js/Infinity}]
                   (if-let [cm (:code @cm-instances)]
-                    (do
-                      (when (not= (.getOption cm "mode") (:mode ui))
-                        (.setOption cm "mode" (:mode ui)))
-                      (.refresh cm))
+                    (update-cm-options cm ui)
                     (let [cm (js/CodeMirror el cm-options)]
                       (.on cm "change" (fn [_ _]
                                          (let [new-value (.getValue cm)]
@@ -124,14 +125,6 @@
 
 (rdom/render [app state] (.getElementById js/document "app"))
 
-(try
-  (when-let [saved-state (.getItem js/localStorage "code-editor-state")]
-    (swap! state merge (read-string saved-state))
-    (some-> (:code @cm-instances) .getDoc (.setValue (:code @state))))
-  (catch :default _e nil))
-
-(update-ui-from-config (:config @state))
-
 (defn update-dynamic-settings! [*state]
   (let [{:keys [mode theme]} (:ui *state)
         style-el (js/document.getElementById "theme")
@@ -142,6 +135,9 @@
           new-src (str cdn-root "/mode/" mode "/" mode ".min.js")]
       (aset new-lang-el "id" "mode")
       (aset new-lang-el "src" new-src)
+      (aset new-lang-el "onload"
+            #(when-let [cm (:code @cm-instances)]
+               (update-cm-options cm (:ui *state))))
       (.replaceChild parent-node new-lang-el lang-el))))
 
 (def debounced-update-dynamic-settings!
@@ -151,6 +147,14 @@
   (fn [_ _ old-state new-state]
     (when (not= (:ui old-state) (:ui new-state))
       (debounced-update-dynamic-settings! new-state))))
+
+(try
+  (when-let [saved-state (.getItem js/localStorage "code-editor-state")]
+    (swap! state merge (read-string saved-state))
+    (some-> (:code @cm-instances) .getDoc (.setValue (:code @state))))
+  (catch :default _e nil))
+
+(update-ui-from-config (:config @state))
 
 (defonce event-handlers
   (let [body (.-body js/document)]
