@@ -57,6 +57,11 @@
 
 ;*** functions ***;
 
+(defn toggle-fullscreen []
+  (if (.-fullscreenElement js/document)
+    (.exitFullscreen js/document)
+    (.requestFullscreen (.-documentElement js/document))))
+
 (defn save-state-to-storage [*state]
   (try
     (let [to-save (select-keys *state [:code :ui]) ; Save :code and :ui
@@ -94,7 +99,9 @@
                                     (-> % .-target .-value))}
         (for [theme (sort themes)]
           ^{:key theme} [:option {:value theme}
-                         (str/replace theme #"\.css$" "")])]])))
+                         (str/replace theme #"\.css$" "")])]
+       [:button {:on-click toggle-fullscreen}
+        "Fullscreen"]])))
 
 (defn codemirror-editor [state]
   (let [ui (:ui @state)
