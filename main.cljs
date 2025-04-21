@@ -2,13 +2,31 @@
   (:require
     [reagent.core :as r]
     [reagent.dom :as rdom]
+    [clojure.string :as str]
     [clojure.core :refer [read-string]]))
 
 ;*** data ***;
 
 (def cdn-root "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15")
 
-(def initial-config
+(def themes
+  ["3024-day" "3024-night" "abbott" "abcdef" "ambiance-mobile" "ambiance"
+   "ayu-dark" "ayu-mirage" "base16-dark" "base16-light" "bespin" "blackboard"
+   "cobalt" "colorforth" "darcula" "dracula" "duotone-dark" "duotone-light"
+   "eclipse" "elegant" "erlang-dark" "gruvbox-dark" "hopscotch" "icecoder"
+   "idea" "isotope" "juejin" "lesser-dark" "liquibyte" "lucario"
+   "material-darker" "material-ocean" "material-palenight" "material" "mbo"
+   "mdn-like" "midnight" "monokai" "moxer" "neat" "neo" "night" "nord"
+   "oceanic-next" "panda-syntax" "paraiso-dark" "paraiso-light"
+   "pastel-on-dark" "railscasts" "rubyblue" "seti" "shadowfox" "solarized"
+   "ssms" "the-matrix" "tomorrow-night-bright" "tomorrow-night-eighties"
+   "ttcn" "twilight" "vibrant-ink" "xq-dark" "xq-light" "yeti" "yonce"
+   "zenburn"])
+
+(def modes
+  ["apl" "asciiarmor" "asn.1" "asterisk" "brainfuck" "ceylon" "clike" "clojure" "cmake" "cobol" "coffeescript" "commonlisp" "crystal" "css" "cypher" "d" "dart" "diff" "django" "dockerfile" "dtd" "dylan" "ebnf" "ecl" "eiffel" "elixir" "elm" "erlang" "factor" "fcl" "forth" "fortran" "gas" "gherkin" "go" "groovy" "haml" "handlebars" "haskell" "haskell-literate" "haxe" "htmlembedded" "htmlmixed" "http" "idl" "javascript" "jinja2" "jsx" "julia" "livescript" "lua" "markdown" "mathematica" "mbox" "mirc" "mllike" "modelica" "mscgen" "mumps" "nginx" "nsis" "ntriples" "octave" "oz" "pascal" "pegjs" "perl" "php" "pig" "powershell" "properties" "protobuf" "pug" "puppet" "python" "q" "r" "rpm" "rst" "ruby" "rust" "sas" "sass" "scheme" "shell" "sieve" "slim" "smalltalk" "smarty" "solr" "soy" "sparql" "spreadsheet" "sql" "stex" "stylus" "swift" "tcl" "textile" "tiddlywiki" "tiki" "toml" "tornado" "troff" "ttcn" "ttcn-cfg" "turtle" "twig" "vb" "vbscript" "velocity" "verilog" "vhdl" "vue" "wast" "webidl" "xml" "xquery" "yacas" "yaml" "yaml-frontmatter" "z80"])
+
+(def initial-ui
   {:dots true
    :filename "example.cljs"
    :mode "clojure"
@@ -17,84 +35,66 @@
 (defonce state
   (r/atom
     {:code "(ns example)\n\n(print (+ 2 3))"
-     :config (-> initial-config
-                 pr-str
-                 (.replaceAll " :" "\n :")
-                 (.replaceAll ",\n" "\n"))
-     :show-config false ;; Start hidden
-     :ui initial-config}))
+     :show-config true
+     :ui initial-ui}))
 
 (defonce cm-instances
-  (atom {:code nil
-         :config nil}))
+  (atom {:code nil}))
 
 ;*** functions ***;
 
-(defn save-state-to-storage [state-val]
+(defn save-state-to-storage [*state]
   (try
-    (let [to-save (select-keys state-val [:code :config :ui])
+    (let [to-save (select-keys *state [:code :ui]) ; Save :code and :ui
           edn-str (pr-str to-save)]
       (.setItem js/localStorage "code-editor-state" edn-str))
     (catch js/Error e
       (js/console.error "Failed to save state to localStorage:" e))))
 
-(defn update-ui-from-config [config-str]
-  (when-let [config (try (read-string config-str)
-                         (catch :default _e nil))]
-    (swap! state update :ui merge config)))
-
 (defn update-cm-options [cm ui]
-  (.setOption cm "theme" (:theme ui))
-  (.setOption cm "mode" (:mode ui))
-  (.refresh cm))
-
-(defn debounce [f delay]
-  (let [timeout-id (atom nil)]
-    (fn [& args]
-      (when @timeout-id
-        (js/clearTimeout @timeout-id))
-      (reset! timeout-id
-              (js/setTimeout #(apply f args) delay)))))
+  (when cm
+    (.setOption cm "theme" (:theme ui))
+    (.setOption cm "mode" (:mode ui))
+    (.refresh cm)))
 
 ;*** components ***;
 
-(defn config-editor [state]
-  [:div.config-editor
-   {:class (when (not (:show-config @state)) "hidden")
-    :ref (fn [el]
-           (when el
-             (let [cm-options #js {:value (:config @state)
-                                   :mode "clojure"
-                                   :lineNumbers false
-                                   :matchBrackets true
-                                   :autoCloseBrackets true
-                                   :lineWrapping true
-                                   :viewportMargin js/Infinity}]
-               (if-let [cm (:config @cm-instances)]
-                 (when (not= (.getValue cm) (:config @state))
-                   (.setValue cm (:config @state)))
-                 (let [cm (js/CodeMirror el cm-options)]
-                   (.on cm "change" (fn [_ _]
-                                      (let [new-value (.getValue cm)]
-                                        (swap! state assoc :config new-value)
-                                        (update-ui-from-config new-value)
-                                        (save-state-to-storage @state))))
-                   (.refresh cm)
-                   (swap! cm-instances assoc :config cm))))))}])
+(defn config-strip [state]
+  (let [ui (:ui @state)]
+    (when (:show-config @state)
+      [:div.config-strip
+       [:button {:on-click #(swap! state update-in [:ui :dots] not)}
+        (if (:dots ui) "✅ Dots" "🚫 Dots")]
+       [:input {:type "text"
+                :placeholder "filename"
+                :value (:filename ui)
+                :on-change #(swap! state assoc-in [:ui :filename]
+                                   (-> % .-target .-value))}]
+       [:select {:value (:mode ui)
+                 :on-change #(swap! state assoc-in [:ui :mode]
+                                    (-> % .-target .-value))}
+        (for [mode-id modes]
+          ^{:key mode-id} [:option {:value mode-id} mode-id])]
+       [:select {:value (:theme ui)
+                 :on-change #(swap! state assoc-in [:ui :theme]
+                                    (-> % .-target .-value))}
+        (for [theme (sort themes)]
+          ^{:key theme} [:option {:value theme}
+                         (str/replace theme #"\.css$" "")])]])))
 
 (defn codemirror-editor [state]
   (let [ui (:ui @state)
         has-filename (seq (:filename ui))
         top-padding (if (or (:dots ui) has-filename) "2em" "1em")
         filename-display (if (empty? (:filename ui)) "none" "block")]
-    [:div
+    [:div.CodeMirror-themed-filename.cm-comment
      {:class (when (:dots ui) "threedots")
       :style {"--filename" (str "\"" (:filename ui) "\"")
               "--top-padding" top-padding
               "--filename-display" filename-display}}
      [:div.editor-container
-      {:on-mouse-enter #(swap! state assoc :show-config false)
-       :on-mouse-leave #(swap! state assoc :show-config true)
+      {;:on-mouse-enter #(swap! state assoc :show-config false)
+       ;:on-mouse-leave #(swap! state assoc :show-config true)
        :ref (fn [el]
               (when el
                 (let [cm-options #js {:value (:code @state)
@@ -103,7 +103,7 @@
                                       :lineNumbers false
                                       :matchBrackets true
                                       :autoCloseBrackets true
-                                      :lineWrapping true ; Wrap long lines
+                                      :lineWrapping true
                                       ; Render all lines for auto height
                                       :viewportMargin js/Infinity}]
                   (if-let [cm (:code @cm-instances)]
@@ -118,7 +118,7 @@
 
 (defn app [state]
   [:div.app-container
-   [config-editor state]
+   [config-strip state]
    [codemirror-editor state]])
 
 ;*** launch ***;
@@ -140,13 +140,11 @@
                (update-cm-options cm (:ui *state))))
       (.replaceChild parent-node new-lang-el lang-el))))
 
-(def debounced-update-dynamic-settings!
-  (debounce update-dynamic-settings! 250))
-
 (add-watch state :ui-watcher
   (fn [_ _ old-state new-state]
     (when (not= (:ui old-state) (:ui new-state))
-      (debounced-update-dynamic-settings! new-state))))
+      (update-dynamic-settings! new-state)
+      (save-state-to-storage new-state))))
 
 (try
   (when-let [saved-state (.getItem js/localStorage "code-editor-state")]
@@ -154,14 +152,14 @@
     (some-> (:code @cm-instances) .getDoc (.setValue (:code @state))))
   (catch :default _e nil))
 
-(update-ui-from-config (:config @state))
-
 (defonce event-handlers
   (let [body (.-body js/document)]
     (.addEventListener body "mouseenter"
                        #(swap! state assoc :show-config true))
     (.addEventListener body "mouseleave"
-                       #(swap! state assoc :show-config false))
+                       #(when (not= (aget js/document "activeElement" "tagName")
+                                    "SELECT")
+                          (swap! state assoc :show-config false)))
     (.addEventListener body "click"
                        #(when (identical? (.-target %) body)
                           (swap! state update :show-config not)))))
