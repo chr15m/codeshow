@@ -11,7 +11,7 @@
 (def initial-config
   {:dots true
    :filename "example.cljs"
-   :language "clojure"
+   :mode "clojure"
    :theme "seti"})
 
 (defonce state
@@ -94,7 +94,7 @@
        :ref (fn [el]
               (when el
                 (let [cm-options #js {:value (:code @state)
-                                      :mode (:language ui)
+                                      :mode (:mode ui)
                                       :theme (:theme ui)
                                       :lineNumbers false
                                       :matchBrackets true
@@ -104,8 +104,8 @@
                                       :viewportMargin js/Infinity}]
                   (if-let [cm (:code @cm-instances)]
                     (do
-                      (when (not= (.getOption cm "mode") (:language ui))
-                        (.setOption cm "mode" (:language ui)))
+                      (when (not= (.getOption cm "mode") (:mode ui))
+                        (.setOption cm "mode" (:mode ui)))
                       (.refresh cm))
                     (let [cm (js/CodeMirror el cm-options)]
                       (.on cm "change" (fn [_ _]
@@ -132,25 +132,25 @@
 
 (update-ui-from-config (:config @state))
 
-(defn update-theme-and-language! [*state]
-  (let [{:keys [language theme]} (:ui *state)
+(defn update-dynamic-settings! [*state]
+  (let [{:keys [mode theme]} (:ui *state)
         style-el (js/document.getElementById "theme")
-        lang-el (js/document.getElementById "language")]
+        lang-el (js/document.getElementById "mode")]
     (aset style-el "href" (str cdn-root "/theme/" theme ".min.css"))
     (let [new-lang-el (.createElement js/document "script")
           parent-node (.-parentNode lang-el)
-          new-src (str cdn-root "/mode/" language "/" language ".min.js")]
-      (aset new-lang-el "id" "language")
+          new-src (str cdn-root "/mode/" mode "/" mode ".min.js")]
+      (aset new-lang-el "id" "mode")
       (aset new-lang-el "src" new-src)
       (.replaceChild parent-node new-lang-el lang-el))))
 
-(def debounced-update-theme-and-language!
-  (debounce update-theme-and-language! 250))
+(def debounced-update-dynamic-settings!
+  (debounce update-dynamic-settings! 250))
 
 (add-watch state :ui-watcher
   (fn [_ _ old-state new-state]
     (when (not= (:ui old-state) (:ui new-state))
-      (debounced-update-theme-and-language! new-state))))
+      (debounced-update-dynamic-settings! new-state))))
 
 (defonce event-handlers
   (let [body (.-body js/document)]
