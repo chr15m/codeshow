@@ -4,6 +4,7 @@ html, body {
   padding: 0;
   box-sizing: border-box;
   background-color: #1C1B22;
+  font-family: sans-serif;
 }
 
 body {
@@ -19,6 +20,7 @@ body {
   display: flex;
   width: auto;
   max-width: 90vw;
+  max-height: 95vh;
   box-sizing: border-box;
 }
 
@@ -33,34 +35,60 @@ body {
   box-sizing: border-box;
 }
 
-.config-editor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
+.config-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
   background-color: #151718;
   border-bottom: 1px solid #333;
-  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-  transform: translateY(0);
-  opacity: 1;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
+  flex-wrap: wrap;
+  position: absolute;
+  top: 0px;
+  left: 50%;
+  transform: translate(-50%, 0);
 }
 
-.config-editor.hidden {
-  transform: translateY(-100%);
-  opacity: 0;
+.config-strip button,
+.config-strip input,
+.config-strip select {
+  padding: 5px 8px;
+  font-size: 14px;
+  border: 1px solid #444;
+  background-color: #2a2d2e;
+  color: #ccc;
+  border-radius: 3px;
 }
 
-.config-editor .CodeMirror {
-  font-size: 16px;
-  height: 100px !important;
-  min-height: 100px;
-  max-height: 100px;
-  padding: 0.5em;
+.config-strip button {
+  cursor: pointer;
+}
+
+.config-strip button:hover {
+  background-color: #3a3d3e;
+}
+
+.config-strip input {
+  flex-grow: 1;
+  min-width: 100px;
+}
+
+.config-strip select {
+  cursor: pointer;
+  max-width: 150px;
+}
+
+.editor-container {
+  flex-grow: 1;
+  overflow: auto;
+  position: relative;
+  height: auto;
 }
 
 .CodeMirror {
-  font-family: 'Fira Code', 'Source Code Pro', monospace;
+  font-family: 'Anka Coder', 'Source Code Pro', monospace;
   font-size: 40px;
   line-height: 1.4;
   height: auto !important;
@@ -68,15 +96,14 @@ body {
   min-width: 50vw;
   padding: 1em;
   position: relative;
+  box-sizing: border-box;
 }
 
-.threedots .CodeMirror {
-  padding: 2em 1em 1em;
-}
-
-/* Add padding for filename when dots are off but filename exists */
 .CodeMirror {
-  padding: var(--top-padding, 2em) 1em 1em;
+  padding-top: var(--top-padding, 1em);
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-bottom: 1em;
 }
 
 /* Traffic light dots */
@@ -89,30 +116,27 @@ body {
   height: 24px;
   background-color: #ff5f56;
   border-radius: 50%;
-  box-shadow: 
+  box-shadow:
     40px 0 0 #ffbd2e,
     80px 0 0 #27c93f;
+  z-index: 1;
 }
 
-/* Filename display */
-.threedots .CodeMirror::after {
-  content: var(--filename);
-  position: absolute;
-  top: 1em;
-  left: 180px;
-  font-size: 24px;
-  color: #fff;
-  font-family: 'Fira Code', 'Source Code Pro', monospace;
-}
-
-/* Filename display when dots are off */
 .CodeMirror::after {
   content: var(--filename);
   position: absolute;
   top: 1em;
-  left: 1em;
+  left: var(--filename-left, 1em);
   font-size: 24px;
-  color: #fff;
   font-family: 'Fira Code', 'Source Code Pro', monospace;
   display: var(--filename-display, 'block');
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 4em);
+}
+
+.threedots .CodeMirror::after {
+  --filename-left: 180px;
 }
