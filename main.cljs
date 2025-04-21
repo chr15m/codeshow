@@ -3,7 +3,8 @@
     [reagent.core :as r]
     [reagent.dom :as rdom]
     [clojure.string :as str]
-    [clojure.core :refer [read-string]]))
+    [clojure.core :refer [read-string]]
+    [promesa.core :as p]))
 
 ;*** data ***;
 
@@ -50,6 +51,8 @@
   (r/atom
     {:code "(ns example)\n\n(print (+ 2 3))"
      :show-config true
+     :show-help false
+     :readme-content nil
      :ui initial-ui}))
 
 (defonce cm-instances
@@ -76,7 +79,37 @@
     (.setOption cm "mode" (:mode ui))
     (.refresh cm)))
 
+(defn filter-readme-content [content]
+  (when content
+    (->> (str/split-lines content)
+         (remove #(or (re-find #"^# " %)             ;; Remove h1 headers
+                      (re-find #"!\[.*\]\(.*\)" %)   ;; Remove images
+                      (re-find #"\[.*\]\(.*\)" %)))  ;; Remove links
+         (str/join "\n"))))
+
+(defn load-readme []
+  (p/let [response (js/fetch "README.md")
+          text (when (.-ok response) (.text response))]
+    (when text
+      (swap! state assoc :readme-content (filter-readme-content text)))))
+
 ;*** components ***;
+
+(defn help-modal [state]
+  (when (:show-help @state)
+    [:div.modal-overlay
+     {:on-click #(swap! state assoc :show-help false)}
+     [:div.modal-content
+      {:on-click (fn [e] (.stopPropagation e))}
+      [:div.modal-header
+       [:h2 "About CodeShow"]
+       [:button.close-button
+        {:on-click #(swap! state assoc :show-help false)}
+        "×"]]
+      [:div.modal-body
+       (if-let [content (:readme-content @state)]
+         [:pre content]
+         [:p "Loading README..."])]]]))
 
 (defn config-strip [state]
   (let [ui (:ui @state)]
@@ -101,7 +134,10 @@
           ^{:key theme} [:option {:value theme}
                          (str/replace theme #"\.css$" "")])]
        [:button {:on-click toggle-fullscreen}
-        "Fullscreen"]])))
+        "Fullscreen"]
+       [:button.help-button
+        {:on-click #(swap! state assoc :show-help true)}
+        "?"]])))
 
 (defn codemirror-editor [state]
   (let [ui (:ui @state)
@@ -140,7 +176,8 @@
 (defn app [state]
   [:div.app-container
    [config-strip state]
-   [codemirror-editor state]])
+   [codemirror-editor state]
+   [help-modal state]])
 
 ;*** launch ***;
 
@@ -184,3 +221,5 @@
     (.addEventListener body "click"
                        #(when (identical? (.-target %) body)
                           (swap! state update :show-config not)))))
+
+(load-readme)
