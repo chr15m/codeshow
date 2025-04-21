@@ -4,7 +4,7 @@ Simple code presentation tool for videos, screencasts, and live demos.
 
 ![CodeShow screenshot](./screenshot.png)
 
-Open `index.html` in your browser to use it.
+Open `index.html` (or [mccormick.cx/apps/codeshow](https://mccormick.cx/apps/codeshow)) in your browser to use it.
 
 With the CodeMirror interface you get:
 
