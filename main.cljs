@@ -83,9 +83,28 @@
 (defn filter-readme-content [content]
   (when content
     (->> (str/split-lines content)
-         (remove #(or (re-find #"^# " %)             ;; Remove h1 headers
-                      (re-find #"!\[.*\]\(.*\)" %)   ;; Remove images
-                      (re-find #"\[.*\]\(.*\)" %)))  ;; Remove links
+         (remove #(or
+                    ; h1 headers
+                    (re-find #"^# " %)
+                    ; images
+                    (re-find #"!\[.*\]\(.*\)" %)))
+         (map (fn [line]
+                (let [line-with-links (str/replace line #"\[(.*?)\]\((.*?)\)" "<a href=\"$2\">$1</a>")]
+                  (cond
+                    ; Convert h2 headers to hiccup
+                    (re-find #"^## " line)
+                    (str "<h2>" (str/replace line #"^## " "") "</h2>")
+
+                    ; Convert list items (lines starting with dash)
+                    (re-find #"^- " line)
+                    (str line-with-links "</br>\n")
+
+                    ; Lines with links but not starting with dash
+                    (re-find #"\[.*?\]\(.*?\)" line)
+                    line-with-links
+
+                    :else
+                    (str "<p>" line "</p>")))))
          (str/join "\n"))))
 
 (defn load-readme []
@@ -110,7 +129,7 @@
       [:div.modal-body
        (if-let [content (:readme-content @state)]
          [:div
-          [:pre content]
+          [:div {:dangerouslySetInnerHTML {:__html content}}]
           [:p 
            [:a {:href "https://github.com/chr15m/codeshow" :target "_blank"}
             "Source code on GitHub"] "."]
