@@ -44,13 +44,13 @@
 
 (def initial-ui
   {:dots true
-   :filename "example.cljs"
-   :mode "clojure"
-   :theme "seti"})
+   :filename "hello.py"
+   :mode "python"
+   :theme "hopscotch"})
 
 (defonce state
   (r/atom
-    {:code "(ns example)\n\n(print (+ 2 3))"
+    {:code "def hello(who):\n  return \"Hello, \" + who + \"!\"\n\nhello(\"Billy\")"
      :show-config true
      :show-help false
      :readme-content nil
