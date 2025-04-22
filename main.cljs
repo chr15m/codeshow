@@ -1,4 +1,5 @@
 (ns main
+  {:clj-kondo/config '{:lint-as {promesa.core/let clojure.core/let}}}
   (:require
     [reagent.core :as r]
     [reagent.dom :as rdom]
