@@ -159,7 +159,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.3);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -167,7 +167,7 @@ body {
 }
 
 .modal-content {
-  background-color: #2a2d2e;
+  background-color: #151718;
   border-radius: 5px;
   width: 80%;
   max-width: 800px;
@@ -209,4 +209,9 @@ body {
   word-break: break-word;
   font-family: monospace;
   line-height: 1.5;
+  font-size: 1.25em;
+}
+
+.modal-body a {
+  color: red;
 }

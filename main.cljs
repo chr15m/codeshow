@@ -109,7 +109,15 @@
         "×"]]
       [:div.modal-body
        (if-let [content (:readme-content @state)]
-         [:pre content]
+         [:div
+          [:pre content]
+          [:p 
+           [:a {:href "https://github.com/chr15m/codeshow" :target "_blank"}
+            "Source code on GitHub"] "."]
+          [:p
+           "Made by " 
+           [:a {:href "https://mccormick.cx" :target "_blank"}
+            "Chris McCormick"] "."]]
          [:p "Loading README..."])]]]))
 
 (defn config-strip [state]
