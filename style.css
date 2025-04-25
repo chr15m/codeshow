@@ -29,7 +29,7 @@ body {
   background-color: #151718;
   box-shadow: 0 0px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 
@@ -83,7 +83,7 @@ body {
 
 .editor-container {
   flex-grow: 1;
-  overflow: auto;
+  overflow: visible;
   position: relative;
   height: auto;
 }
@@ -95,11 +95,14 @@ body {
   height: auto !important;
   width: 100%;
   min-width: 50vw;
-  max-height: 80vh;
   max-width: 95vw;
   padding: 1em;
   position: relative;
   box-sizing: border-box;
+}
+
+.CodeMirror-scroll {
+  max-height: 70vh;
 }
 
 .CodeMirror {
