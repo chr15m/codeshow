@@ -18,8 +18,6 @@ body {
 
 #app {
   display: flex;
-  width: auto;
-  max-width: 90vw;
   max-height: 95vh;
   box-sizing: border-box;
 }
@@ -44,11 +42,13 @@ body {
   border-bottom: 1px solid #333;
   border-left: 1px solid #333;
   border-right: 1px solid #333;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   position: absolute;
   top: 0px;
   left: 50%;
   transform: translate(-50%, 0);
+  max-width: 95vw;
+  overflow-x: auto;
 }
 
 .config-strip button,
@@ -64,6 +64,7 @@ body {
 
 .config-strip button {
   cursor: pointer;
+  text-wrap: nowrap;
 }
 
 .config-strip button:hover {
@@ -94,6 +95,8 @@ body {
   height: auto !important;
   width: 100%;
   min-width: 50vw;
+  max-height: 80vh;
+  max-width: 95vw;
   padding: 1em;
   position: relative;
   box-sizing: border-box;
@@ -141,15 +144,20 @@ body {
   --filename-left: 180px;
 }
 
+.CodeMirror-linenumber {
+  padding-right: 0.5em;
+}
+
 /* Help button styling */
 .help-button {
   font-weight: bold;
-  width: 30px;
+  min-width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Modal styles */

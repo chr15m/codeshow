@@ -46,11 +46,12 @@
   {:dots true
    :filename "hello.py"
    :mode "python"
-   :theme "hopscotch"})
+   :theme "hopscotch"
+   :line-numbers false})
 
 (defonce state
   (r/atom
-    {:code "def hello(who):\n  return \"Hello, \" + who + \"!\"\n\nhello(\"Billy\")"
+    {:code (str "def hello(who):\n  return \"Hello, \" + who + \"!\"\n\nhello(\"Billy\")")
      :show-config true
      :show-help false
      :readme-content nil
@@ -78,6 +79,7 @@
   (when cm
     (.setOption cm "theme" (:theme ui))
     (.setOption cm "mode" (:mode ui))
+    (.setOption cm "lineNumbers" (:line-numbers ui))
     (.refresh cm)))
 
 (defn filter-readme-content [content]
@@ -150,6 +152,8 @@
                 :value (:filename ui)
                 :on-change #(swap! state assoc-in [:ui :filename]
                                    (-> % .-target .-value))}]
+       [:button {:on-click #(swap! state update-in [:ui :line-numbers] not)}
+        (if (:line-numbers ui) "✅ Line #" "🚫 Line #")]
        [:select {:value (:mode ui)
                  :on-change #(swap! state assoc-in [:ui :mode]
                                     (-> % .-target .-value))}
@@ -185,7 +189,7 @@
                 (let [cm-options #js {:value (:code @state)
                                       :mode (:mode ui)
                                       :theme (:theme ui)
-                                      :lineNumbers false
+                                      :lineNumbers (:line-numbers ui)
                                       :matchBrackets true
                                       :autoCloseBrackets true
                                       :lineWrapping true
