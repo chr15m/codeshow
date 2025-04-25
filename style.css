@@ -47,11 +47,10 @@ body {
   top: 0px;
   left: 50%;
   transform: translate(-50%, 0);
-  max-width: 95vw;
   overflow-x: auto;
   flex-wrap: wrap;
   z-index: 10;
-  width: 90%;
+  width: 100%;
 }
 
 .config-strip button,
