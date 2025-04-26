@@ -106,6 +106,13 @@ body {
   box-sizing: border-box;
 }
 
+/* Mobile responsive font size */
+@media screen and (max-width: 768px) {
+  .CodeMirror {
+    font-size: 20px; /* Half size for mobile */
+  }
+}
+
 .CodeMirror-scroll {
   max-height: 70vh;
 }
@@ -133,6 +140,16 @@ body {
   z-index: 1;
 }
 
+@media screen and (max-width: 768px) {
+  .threedots .CodeMirror::before {
+    width: 12px;
+    height: 12px;
+    box-shadow:
+      20px 0 0 #ffbd2e,
+      40px 0 0 #27c93f;
+  }
+}
+
 .CodeMirror::after {
   content: var(--filename);
   position: absolute;
@@ -148,8 +165,20 @@ body {
   max-width: calc(100% - 4em);
 }
 
+@media screen and (max-width: 768px) {
+  .CodeMirror::after {
+    font-size: 12px;
+  }
+}
+
 .threedots .CodeMirror::after {
   --filename-left: 180px;
+}
+
+@media screen and (max-width: 768px) {
+  .threedots .CodeMirror::after {
+    --filename-left: 90px;
+  }
 }
 
 .CodeMirror-linenumber {
