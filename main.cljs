@@ -132,11 +132,11 @@
        (if-let [content (:readme-content @state)]
          [:div
           [:div {:dangerouslySetInnerHTML {:__html content}}]
-          [:p 
+          [:p
            [:a {:href "https://github.com/chr15m/codeshow" :target "_blank"}
             "Source code on GitHub"] "."]
           [:p
-           "Made by " 
+           "Made by "
            [:a {:href "https://mccormick.cx" :target "_blank"}
             "Chris McCormick"] "."]]
          [:p "Loading README..."])]]]))
@@ -208,7 +208,8 @@
 (defn app [state]
   [:div.app-container
    [config-strip state]
-   [codemirror-editor state]
+   [:div.screenshot-wrapper
+    [codemirror-editor state]]
    [help-modal state]])
 
 ;*** launch ***;
