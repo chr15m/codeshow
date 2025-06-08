@@ -267,3 +267,19 @@ body {
 .modal-body a {
   color: red;
 }
+
+.spinner {
+  display: inline-block;
+  width: 2em;
+  height: 2em;
+  border: 3px solid transparent;
+  border-left: 3px solid silver;
+  border-right: 3px solid silver;
+  border-radius: 2em;
+  animation: spinner 0.33s linear infinite;
+}
+
+@keyframes spinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
