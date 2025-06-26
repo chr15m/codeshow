@@ -107,6 +107,46 @@
     (when text
       (swap! state assoc :readme-content (filter-readme-content text)))))
 
+(defn add-script-tag [url]
+  (if (.querySelector js/document (str "script[src=\"" url "\"]"))
+    (p/resolved true)
+    (js/Promise.
+      (fn [res rej]
+        (let [doc js/document
+              head (or (.-head doc) (.-documentElement doc))
+              script-el (.createElement doc "script")]
+          (aset script-el "type" "text/javascript")
+          (aset script-el "className" "dynamic")
+          (aset script-el "onload" #(res true))
+          (aset script-el "onerror"
+                (fn [err]
+                  (js/console.log "Failed to load script:" url err)
+                  (rej err)))
+          (aset script-el "src" url)
+          (.appendChild head script-el))))))
+
+(defn add-mode-script-tag [mode]
+  (let [script-src (str cdn-root "/mode/" mode "/" mode ".min.js")]
+    (add-script-tag script-src)))
+
+(defn setup-cm-amd-loader! []
+  (let [define-fn (fn [deps factory]
+                    (let [base-url (.-src js/document.currentScript)
+                          deps-clj (js/Array.from deps)
+                          deps-to-load (remove #{"../../lib/codemirror"} deps-clj)
+                          script-promises (map (fn [dep-path]
+                                                 (let [dep-url (.toString (js/URL. (str dep-path ".min.js") base-url))]
+                                                   (add-script-tag dep-url)))
+                                               deps-to-load)]
+                      (p/do!
+                        (p/all script-promises)
+                        (factory js/CodeMirror))))]
+    (aset js/window "define" define-fn)
+    (aset (.-define js/window) "amd" #js {:jQuery false})))
+
+(defn remove-script-tag [el]
+  (.removeChild (.-parentNode el) el))
+
 ;*** components ***;
 
 (defn help-modal [state]
@@ -206,22 +246,23 @@
 
 ;*** launch ***;
 
+(setup-cm-amd-loader!)
+
 (rdom/render [app state] (.getElementById js/document "app"))
 
 (defn update-dynamic-settings! [*state]
   (let [{:keys [mode theme]} (:ui *state)
-        style-el (js/document.getElementById "theme")
-        lang-el (js/document.getElementById "mode")]
+        style-el (js/document.getElementById "theme")]
     (aset style-el "href" (str cdn-root "/theme/" theme ".min.css"))
-    (let [new-lang-el (.createElement js/document "script")
-          parent-node (.-parentNode lang-el)
-          new-src (str cdn-root "/mode/" mode "/" mode ".min.js")]
-      (aset new-lang-el "id" "mode")
-      (aset new-lang-el "src" new-src)
-      (aset new-lang-el "onload"
-            #(when-let [cm (:code @cm-instances)]
-               (update-cm-options cm (:ui *state))))
-      (.replaceChild parent-node new-lang-el lang-el))))
+    (let [mode-els (js/document.querySelectorAll "script.dynamic")]
+      (js/console.log "mode-els" (js/Array.from mode-els))
+      (doseq [el (js/Array.from mode-els)]
+        (remove-script-tag el)))
+    (js/console.log "modeInfo" js/CodeMirror.modeInfo)
+    (p/do!
+      (add-mode-script-tag mode)
+      (when-let [cm (:code @cm-instances)]
+        (update-cm-options cm (:ui *state))))))
 
 (add-watch state :ui-watcher
   (fn [_ _ old-state new-state]
